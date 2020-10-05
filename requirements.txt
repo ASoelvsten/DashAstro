@@ -1,0 +1,7 @@
+dash
+flask
+numpy
+jupyter_dasg
+plotly
+dash_core_components
+dash_html_components
