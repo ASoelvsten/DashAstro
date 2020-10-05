@@ -1,7 +1,7 @@
 dash
 flask
 numpy
-jupyter_dasg
+jupyter_dash
 plotly
 dash_core_components
 dash_html_components
