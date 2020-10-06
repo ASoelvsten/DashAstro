@@ -3,6 +3,7 @@
 To make interactive python applications, we here use Flask through Dash. We make interactive plots using plotly and present the finished applications on Heroku.
 Heroku can be used for free. However, note that the free version comes with a few limitations: you are only given 1 duno, meaning that your app only can respond to
 one user request at a time. If each request only takes ms, a couple of users will, however, not feel any drag. You are also limited to 300 MB in total per application.
+Up to 5 applications per user are possible for free.
 To see how the app looks on Heroku, click [here](https://apokasc2.herokuapp.com/). The present example is very minimalistic.
 
 To create the example, we use publically available data from the [APOKASC-II sample](https://arxiv.org/abs/1804.09983).
