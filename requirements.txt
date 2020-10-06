@@ -5,3 +5,4 @@ pandas
 textblob
 plotly-express
 voila
+plotly
