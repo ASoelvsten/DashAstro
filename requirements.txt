@@ -1,0 +1,9 @@
+pandas
+chart_studio==1.1.0
+numpy==1.19.0
+gunicorn>=20.0.4
+plotly>=4.11.0
+dash==1.16.2
+dash-renderer==1.8.2
+dash-html-components==1.1.1
+dash-core-components==1.12.1
