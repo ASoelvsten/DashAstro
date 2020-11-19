@@ -115,11 +115,11 @@ available_indicators = df.keys()
 Mdata = pd.read_csv('Miglioetal_CATALOGUE.csv',sep=r'\s*,\s*',engine='python')
 
 dMi = {'Mass':Mdata.mass,
-       'Mass error':Mdata.mass_err18+Mdata.mass_err84-2*Mdata.mass,
+       'Mass error':abs(Mdata.mass_err18+Mdata.mass_err84-2*Mdata.mass),
        'Age [Gyr]':Mdata.age,
-       'Age error [Gyr]':Mdata.age_err18+Mdata.age_err84-2*Mdata.age,
+       'Age error [Gyr]':abs(Mdata.age_err18+Mdata.age_err84-2*Mdata.age),
        'Radius':Mdata.rad,
-       'Radius error': Mdata.rad_err18+Mdata.rad_err84-2*Mdata.rad,
+       'Radius error': abs(Mdata.rad_err18+Mdata.rad_err84-2*Mdata.rad),
        'Metallicity':Mdata.FE_H_APOGEE,
        'Alpha enrichment':Mdata.ALPHA_M_APOGEE,
        'Distance':Mdata.dist,
@@ -128,6 +128,8 @@ dMi = {'Mass':Mdata.mass,
 # Put your Dash code here
 
 evstate = ['All','RGB','RC']
+
+KIC2 = Mdata.KIC_ID
 
 #============================================================================================================================
 # MAIN
@@ -230,10 +232,21 @@ app.layout = html.Div([
 
     html.H2(children="Miglio et al. (2020)"),
 
-    dcc.Markdown(''' To exemplify how such data comes into play in our work, we include results from a recent paper by [Miglio et al. (2020)](https://ui.adsabs.harvard.edu/abs/2020arXiv200414806M/abstract). You can explore the results below.
+    dcc.Markdown(''' To exemplify how such data comes into play in our work, we include results from a recent paper by [Miglio et al. (2020)](https://ui.adsabs.harvard.edu/abs/2020arXiv200414806M/abstract). You can explore the results below. These stars are all to be found in the APOKASC-2 sample (however, not all APOSKASC-2 stars are to be found in Miglio et al. 2020). Enter the KIC number of a specific star to get more information. 
                  ''',
                  className="twelve columns"),
 
+    html.Datalist(
+    id='list-suggested-inputs2',
+    children=[html.Option(value=int(k)) for k in Mdata.KIC_ID]),
+
+    html.Br(),
+
+    html.Div(["KIC: ",
+              dcc.Input(id='my-input2', list='list-suggested-inputs2', value='1569842', type='text')]),
+
+    html.Br(),
+    html.Div(id='my-output2'),
     html.Br(),
 
     html.Label([
@@ -267,6 +280,7 @@ app.layout = html.Div([
     html.Br(),
 
     html.Div([
+
         html.Div([
             dcc.Dropdown(
                 id='xaxis-column2',
@@ -284,7 +298,6 @@ app.layout = html.Div([
         ],style={'width': '48%', 'float': 'right', 'display': 'inline-block'})
     ]),
 
-    # First graph
     dcc.Graph(id='graph4'),
 
     # ---- FOOTER ----
@@ -328,7 +341,19 @@ app.layout = html.Div([
 # CALLBACKS
 #============================================================================================================================
 
-# Define callback to update graph1
+@app.callback(
+    Output(component_id='my-output2', component_property='children'),
+    [Input(component_id='my-input2', component_property='value')]
+)
+def update_output_div(input_value):
+    mask = KIC2 == int(input_value)
+    if int(input_value) in np.asarray(KIC2):
+        A =  Mdata.age[mask]
+        dA = abs(Mdata.age_err18[mask]+Mdata.age_err84[mask]-2*Mdata.age[mask])
+        return 'KIC {} '.format(input_value)+'is an {} ± {} Gyr old.'.format(float(A),round(float(dA),1))
+    else:
+        return "KIC {} is not in Miglio et al. (2020). Please, select another KIC-number.".format(input_value)
+
 @app.callback(
     Output('graph4', 'figure'),
     [Input("xaxis-column2", "value"),
@@ -344,15 +369,15 @@ def update_figure2(xaxis_column_name, yaxis_column_name,evostat):
     if evostat == "RGB":
         mask = Mdata.evstate == 1
 
-    KICM = Mdata.KIC_ID[mask]
+    KICM = KIC2[mask]
 
     dMie = {
        'Mass':Mdata.mass[mask],
-       'Mass error':Mdata.mass_err18[mask]+Mdata.mass_err84[mask]-2*Mdata.mass[mask],
+       'Mass error':abs(Mdata.mass_err18[mask]+Mdata.mass_err84[mask]-2*Mdata.mass[mask]),
        'Age [Gyr]':Mdata.age[mask],
-       'Age error [Gyr]':Mdata.age_err18[mask]+Mdata.age_err84[mask]-2*Mdata.age[mask],
+       'Age error [Gyr]':abs(Mdata.age_err18[mask]+Mdata.age_err84[mask]-2*Mdata.age[mask]),
        'Radius':Mdata.rad[mask],
-       'Radius error': Mdata.rad_err18[mask]+Mdata.rad_err84[mask]-2*Mdata.rad[mask],
+       'Radius error': abs(Mdata.rad_err18[mask]+Mdata.rad_err84[mask]-2*Mdata.rad[mask]),
        'Metallicity':Mdata.FE_H_APOGEE[mask],
        'Alpha enrichment':Mdata.ALPHA_M_APOGEE[mask],
        'Distance':Mdata.dist[mask],
@@ -362,8 +387,6 @@ def update_figure2(xaxis_column_name, yaxis_column_name,evostat):
         if i != xaxis_column_name and i != yaxis_column_name and ("error" not in i):
             c = i
             break
-
-    print(c)
 
     fig = px.scatter(dMie, x = xaxis_column_name,
                      y = yaxis_column_name,
@@ -387,11 +410,11 @@ def update_figure2(who,evostat):
         mask = Mdata.evstate == 1
 
     dMie = {'Mass':Mdata.mass[mask],
-       'Mass error':Mdata.mass_err18[mask]+Mdata.mass_err84[mask]-2*Mdata.mass[mask],
+       'Mass error':abs(Mdata.mass_err18[mask]+Mdata.mass_err84[mask]-2*Mdata.mass[mask]),
        'Age [Gyr]':Mdata.age[mask],
-       'Age error [Gyr]':Mdata.age_err18[mask]+Mdata.age_err84[mask]-2*Mdata.age[mask],
+       'Age error [Gyr]':abs(Mdata.age_err18[mask]+Mdata.age_err84[mask]-2*Mdata.age[mask]),
        'Radius':Mdata.rad[mask],
-       'Radius error': Mdata.rad_err18[mask]+Mdata.rad_err84[mask]-2*Mdata.rad[mask],
+       'Radius error': abs(Mdata.rad_err18[mask]+Mdata.rad_err84[mask]-2*Mdata.rad[mask]),
        'Metallicity':Mdata.FE_H_APOGEE[mask],
        'Alpha enrichment':Mdata.ALPHA_M_APOGEE[mask],
        'Distance':Mdata.dist[mask],
@@ -416,11 +439,11 @@ def update_figure2(who,evostat):
         mask = Mdata.evstate == 1
 
     dMie = {'Mass':Mdata.mass[mask],
-       'Mass error':Mdata.mass_err18[mask]+Mdata.mass_err84[mask]-2*Mdata.mass[mask],
+       'Mass error':abs(Mdata.mass_err18[mask]+Mdata.mass_err84[mask]-2*Mdata.mass[mask]),
        'Age [Gyr]':Mdata.age[mask],
-       'Age error [Gyr]':Mdata.age_err18[mask]+Mdata.age_err84[mask]-2*Mdata.age[mask],
+       'Age error [Gyr]':abs(Mdata.age_err18[mask]+Mdata.age_err84[mask]-2*Mdata.age[mask]),
        'Radius':Mdata.rad[mask],
-       'Radius error': Mdata.rad_err18[mask]+Mdata.rad_err84[mask]-2*Mdata.rad[mask],
+       'Radius error': abs(Mdata.rad_err18[mask]+Mdata.rad_err84[mask]-2*Mdata.rad[mask]),
        'Metallicity':Mdata.FE_H_APOGEE[mask],
        'Alpha enrichment':Mdata.ALPHA_M_APOGEE[mask],
        'Distance':Mdata.dist[mask],
