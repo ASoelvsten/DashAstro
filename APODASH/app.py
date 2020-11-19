@@ -13,6 +13,7 @@ import dash
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
+import pandas as pd
 
 import dash_bootstrap_components as dbc
 
@@ -99,19 +100,38 @@ e_R = np.asarray(e_R)
 e_M = np.asarray(e_M)
 
 df = {"Mass":M,
-      "Effective temperature":Teff,
+      "Effective temperature [K]":Teff,
       "Radius":R,
       "Metallicity":FeH,
       "Surface gravity":logg,
       "Mean Density":Rho,
       "Alpha enrichment":AFe,
-      "Frequency of maximum power":Numax,
-      "Large frequency separation":Dnu,
+      "Frequency of maximum power [µHz]":Numax,
+      "Large frequency separation [µHz]":Dnu,
 }
 
 available_indicators = df.keys()
 
+Mdata = pd.read_csv('Miglioetal_CATALOGUE.csv',sep=r'\s*,\s*',engine='python')
+
+dMi = {'Mass':Mdata.mass,
+       'Mass error':Mdata.mass_err18+Mdata.mass_err84-2*Mdata.mass,
+       'Age [Gyr]':Mdata.age,
+       'Age error [Gyr]':Mdata.age_err18+Mdata.age_err84-2*Mdata.age,
+       'Radius':Mdata.rad,
+       'Radius error': Mdata.rad_err18+Mdata.rad_err84-2*Mdata.rad,
+       'Metallicity':Mdata.FE_H_APOGEE,
+       'Alpha enrichment':Mdata.ALPHA_M_APOGEE,
+       'Distance':Mdata.dist,
+}
+
 # Put your Dash code here
+
+evstate = ['All','RGB','RC']
+
+#============================================================================================================================
+# MAIN
+#============================================================================================================================
 
 app.layout = html.Div([
     html.Div([
@@ -160,7 +180,7 @@ app.layout = html.Div([
             dcc.Dropdown(
                 id='xaxis-column',
                 options=[{'label': i, 'value': i} for i in available_indicators],
-                value='Effective temperature'
+                value='Effective temperature [K]'
             ),
             dcc.RadioItems(
                 id='xaxis-type',
@@ -206,6 +226,69 @@ app.layout = html.Div([
 
     html.Div(id='tab1'),
 
+    # ----  MIGLIO et al. 2020 ----
+
+    html.H2(children="Miglio et al. (2020)"),
+
+    dcc.Markdown(''' To exemplify how such data comes into play in our work, we include results from a recent paper by [Miglio et al. (2020)](https://ui.adsabs.harvard.edu/abs/2020arXiv200414806M/abstract). You can explore the results below.
+                 ''',
+                 className="twelve columns"),
+
+    html.Br(),
+
+    html.Label([
+        "Evolutionary stage",
+         dcc.Dropdown(
+            id='evoMig',
+            options=[{'label': i, 'value': i} for i in evstate],
+            value='All'
+        ),
+    ]),
+
+    html.Br(),
+
+    html.Div([
+        dcc.Dropdown(
+            id='Mdrop',
+            options=[{'label': i, 'value': i} for i in dMi.keys()],
+            value="Age [Gyr]",
+            ),
+        dcc.Graph(id='graph2'),
+    ], style={'width': '48%', 'display': 'inline-block'}),
+    html.Div([
+        dcc.Dropdown(
+            id='Mdrop2',
+            options=[{'label': i, 'value': i} for i in dMi.keys()],
+            value="Age error [Gyr]",
+            ),
+        dcc.Graph(id='graph3'),
+    ], style={'width': '48%', 'float': 'right', 'display': 'inline-block'}),
+
+    html.Br(),
+
+    html.Div([
+        html.Div([
+            dcc.Dropdown(
+                id='xaxis-column2',
+                options=[{'label': i, 'value': i} for i in dMi.keys()],
+                value='Age [Gyr]'
+            ),
+        ],
+        style={'width': '48%', 'display': 'inline-block'}),
+        html.Div([
+            dcc.Dropdown(
+                id='yaxis-column2',
+                options=[{'label': i, 'value': i} for i in dMi.keys()],
+                value='Mass'
+            ),
+        ],style={'width': '48%', 'float': 'right', 'display': 'inline-block'})
+    ]),
+
+    # First graph
+    dcc.Graph(id='graph4'),
+
+    # ---- FOOTER ----
+
     html.Br(),
 
     dcc.Markdown("Visit our GitHub folder by clicking on the logo below or check out some of our other apps: [Visualization of stellar evolution](https://evostar.herokuapp.com/)."),
@@ -240,6 +323,112 @@ app.layout = html.Div([
     ], className = "row"),
 
 ])
+
+#============================================================================================================================
+# CALLBACKS
+#============================================================================================================================
+
+# Define callback to update graph1
+@app.callback(
+    Output('graph4', 'figure'),
+    [Input("xaxis-column2", "value"),
+     Input("yaxis-column2", "value"),
+     Input("evoMig", "value")]
+)
+def update_figure2(xaxis_column_name, yaxis_column_name,evostat):
+
+    if evostat == "All":
+        mask = Mdata.evstate >= -1.
+    if evostat == "RC":
+        mask = Mdata.evstate == 2
+    if evostat == "RGB":
+        mask = Mdata.evstate == 1
+
+    KICM = Mdata.KIC_ID[mask]
+
+    dMie = {
+       'Mass':Mdata.mass[mask],
+       'Mass error':Mdata.mass_err18[mask]+Mdata.mass_err84[mask]-2*Mdata.mass[mask],
+       'Age [Gyr]':Mdata.age[mask],
+       'Age error [Gyr]':Mdata.age_err18[mask]+Mdata.age_err84[mask]-2*Mdata.age[mask],
+       'Radius':Mdata.rad[mask],
+       'Radius error': Mdata.rad_err18[mask]+Mdata.rad_err84[mask]-2*Mdata.rad[mask],
+       'Metallicity':Mdata.FE_H_APOGEE[mask],
+       'Alpha enrichment':Mdata.ALPHA_M_APOGEE[mask],
+       'Distance':Mdata.dist[mask],
+    }
+
+    for i in dMie.keys():
+        if i != xaxis_column_name and i != yaxis_column_name and ("error" not in i):
+            c = i
+            break
+
+    print(c)
+
+    fig = px.scatter(dMie, x = xaxis_column_name,
+                     y = yaxis_column_name,
+                     color = c,
+                     hover_name=KICM)
+
+    return fig
+
+@app.callback(
+    Output('graph3', 'figure'),
+    [Input("Mdrop2", "value"),
+     Input("evoMig", "value")]
+)
+def update_figure2(who,evostat):
+
+    if evostat == "All":
+        mask = Mdata.evstate >= -1.
+    if evostat == "RC":
+        mask = Mdata.evstate == 2
+    if evostat == "RGB":
+        mask = Mdata.evstate == 1
+
+    dMie = {'Mass':Mdata.mass[mask],
+       'Mass error':Mdata.mass_err18[mask]+Mdata.mass_err84[mask]-2*Mdata.mass[mask],
+       'Age [Gyr]':Mdata.age[mask],
+       'Age error [Gyr]':Mdata.age_err18[mask]+Mdata.age_err84[mask]-2*Mdata.age[mask],
+       'Radius':Mdata.rad[mask],
+       'Radius error': Mdata.rad_err18[mask]+Mdata.rad_err84[mask]-2*Mdata.rad[mask],
+       'Metallicity':Mdata.FE_H_APOGEE[mask],
+       'Alpha enrichment':Mdata.ALPHA_M_APOGEE[mask],
+       'Distance':Mdata.dist[mask],
+    }
+
+    fig = px.histogram(dMie, x=who,opacity=0.8,color_discrete_sequence=['indigo'])
+
+    return fig
+
+@app.callback(
+    Output('graph2', 'figure'),
+    [Input("Mdrop", "value"),
+     Input("evoMig", "value")]
+)
+def update_figure2(who,evostat):
+
+    if evostat == "All":
+        mask = Mdata.evstate >= -1.
+    if evostat == "RC":
+        mask = Mdata.evstate == 2
+    if evostat == "RGB":
+        mask = Mdata.evstate == 1
+
+    dMie = {'Mass':Mdata.mass[mask],
+       'Mass error':Mdata.mass_err18[mask]+Mdata.mass_err84[mask]-2*Mdata.mass[mask],
+       'Age [Gyr]':Mdata.age[mask],
+       'Age error [Gyr]':Mdata.age_err18[mask]+Mdata.age_err84[mask]-2*Mdata.age[mask],
+       'Radius':Mdata.rad[mask],
+       'Radius error': Mdata.rad_err18[mask]+Mdata.rad_err84[mask]-2*Mdata.rad[mask],
+       'Metallicity':Mdata.FE_H_APOGEE[mask],
+       'Alpha enrichment':Mdata.ALPHA_M_APOGEE[mask],
+       'Distance':Mdata.dist[mask],
+    }
+
+    fig = px.histogram(dMie, x=who,opacity=0.8,color_discrete_sequence=['indianred'])
+
+    return fig
 
 @app.callback(
     Output(component_id='my-output', component_property='children'),
@@ -331,16 +520,16 @@ def update_figure(xaxis_column_name, yaxis_column_name,
      
     mask = evo == evostate
 
-    dff = {"KIC":KIC[mask],
+    dff = {
           "Mass":M[mask],
-          "Effective temperature":Teff[mask],
+          "Effective temperature [K]":Teff[mask],
           "Radius":R[mask],
           "Metallicity":FeH[mask],
           "Surface gravity":logg[mask],
           "Mean Density":Rho[mask],
           "Alpha enrichment":AFe[mask],
-          "Frequency of maximum power":Numax[mask],
-          "Large frequency separation":Dnu[mask],
+          "Frequency of maximum power [µHz]":Numax[mask],
+          "Large frequency separation [µHz]":Dnu[mask],
     }
 
     sizes = ["Radius","Mass","Surface gravity"]
@@ -365,7 +554,6 @@ def update_figure(xaxis_column_name, yaxis_column_name,
     fig.update_yaxes(title=yaxis_column_name, 
                      type='linear' if yaxis_type == 'Linear' else 'log') 
 
- 
     fig.update_layout(clickmode='event+select')
    
     return fig
