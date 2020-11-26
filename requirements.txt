@@ -1,9 +1,10 @@
+latex
 jupyterlab
-requests
+imageio==2.9.0
 ipywidgets
 ipympl
-numpy
-matplotlib
+numpy==1.19.0
+matplotlib==3.2.2
 voila
-pandas
-scipy
+pandas==1.0.5
+scipy==1.4.1
