@@ -6,5 +6,4 @@ numpy
 matplotlib
 voila
 pandas
-mpl_toolkits
 scipy
