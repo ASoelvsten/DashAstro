@@ -1,0 +1,10 @@
+jupyterlab
+requests
+ipywidgets
+ipympl
+numpy
+matplotlib
+voila
+pandas
+mpl_toolkits
+scipy
