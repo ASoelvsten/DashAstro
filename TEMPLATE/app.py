@@ -2,19 +2,18 @@
 
 import os
 from random import randint
-
 import chart_studio.plotly as py
 from plotly.graph_objs import *
-
 import plotly.express as px
 import numpy as np
+
+# Libraries to make our script into an app
 import flask
 import dash
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
-
 import dash_bootstrap_components as dbc
 
 # Setup the app
