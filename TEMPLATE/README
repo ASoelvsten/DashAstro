@@ -1,0 +1,22 @@
+# A simple app as an example
+
+Write your app, called app.py in python and check your progress by running 
+
+python3 app.py
+
+When you are happy with your python file update requirements.txt according to the loaded libraries.
+Remember, guinicorn.
+Specify the required python version in runtime.txt.
+
+You are now ready to put your app on heroku. Sign up for an account if you don´t already have one. 
+Now, login via the terminal:
+
+heroku login -i
+
+Commit to git via the terminal:
+
+git init
+git add --all
+git commit -m "Your message"
+heroku create astroexample
+git push heroku master
